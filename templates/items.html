@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items List</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6 text-center">Items List</h1>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th class="py-2 px-4 text-left font-medium text-gray-600">ID</th>
+                        <th class="py-2 px-4 text-left font-medium text-gray-600">State</th>
+                        <th class="py-2 px-4 text-left font-medium text-gray-600">URL</th>
+                        <th class="py-2 px-4 text-left font-medium text-gray-600">Created At</th>
+                        <th class="py-2 px-4 text-left font-medium text-gray-600">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr class="border-b hover:bg-gray-100">
+                        <td class="py-2 px-4">{{ item['id'] }}</td>
+                        <td class="py-2 px-4">{{ item['state'] }}</td>
+                        <td class="py-2 px-4">{{ item['url'] }}</td>
+                        <td class="py-2 px-4">{{ item['created_at'] }}</td>
+                        <td class="py-2 px-4">
+                            <button onclick="toggleDetails('{{ item['id'] }}')" class="bg-blue-500 text-white px-4 py-1 rounded">
+                                Show/Hide Details
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="{{ item['id'] }}" class="hidden">
+                        <td colspan="5" class="py-2 px-4 bg-gray-50">
+                            <h4 class="text-lg font-bold mb-2">LLM Responses:</h4>
+                            <ul class="list-disc list-inside">
+                                {% for response in item['llm_response'] %}
+                                <li class="mb-2">
+                                    <strong>Category:</strong> {{ response['category'] }}<br>
+                                    <strong>Subcategory:</strong> {{ response['subcategory'] }}<br>
+                                    <strong>Rationale:</strong> {{ response['rationale'] }}<br>
+                                    <strong>Confidence:</strong> {{ response['confidence'] }}%<br>
+                                    <strong>Match:</strong> {{ response['is_match'] }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Alpine.js for interactivity -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <script>
+        function toggleDetails(id) {
+            var details = document.getElementById(id);
+            details.classList.toggle("hidden");
+        }
+    </script>
+</body>
+</html>
