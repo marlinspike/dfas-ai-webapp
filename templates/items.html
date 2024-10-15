@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Items List</title>
-    <!-- Tailwind CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 text-gray-900">
     <div class="container mx-auto p-6">
         <h1 class="text-3xl font-bold mb-6 text-center">Items List</h1>
+        
+        <!-- Table displaying the items -->
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white border border-gray-200">
                 <thead class="bg-gray-100 border-b">
@@ -54,10 +55,24 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Pagination Controls -->
+        <div class="flex justify-between mt-4">
+            <div>
+                {% if page > 1 %}
+                <a href="/?page={{ page - 1 }}&size={{ size }}" class="bg-blue-500 text-white px-4 py-2 rounded">Previous</a>
+                {% endif %}
+            </div>
+            <div>
+                Page {{ page }} of {{ total_pages }}  <!-- Show current page and total pages -->
+            </div>
+            <div>
+                {% if page < total_pages %}
+                <a href="/?page={{ page + 1 }}&size={{ size }}" class="bg-blue-500 text-white px-4 py-2 rounded">Next</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
-
-    <!-- Alpine.js for interactivity -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <script>
         function toggleDetails(id) {

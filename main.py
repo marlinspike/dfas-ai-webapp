@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from models import *
 import os
 from dotenv import load_dotenv
-
+import math
 # Load .env file
 load_dotenv()
 
@@ -25,10 +25,25 @@ database = client.get_database_client("dfas")
 container = database.get_container_client("items")
 
 @app.get("/")
-async def read_items(request: Request):
-    # Query to get all items from the container
+async def read_items(request: Request, page: int = 1, size: int = 10):
     query = "SELECT * FROM c"
     items = list(container.query_items(query=query, enable_cross_partition_query=True))
-
-    # Pass the data to the Jinja2 template
-    return templates.TemplateResponse("items.html", {"request": request, "items": items})
+    
+    # Pagination logic
+    total_items = len(items)
+    total_pages = math.ceil(total_items / size)  # Calculate the total number of pages
+    start = (page - 1) * size
+    end = start + size
+    paged_items = items[start:end]
+    
+    return templates.TemplateResponse(
+        "items.html", 
+        {
+            "request": request,
+            "items": paged_items,
+            "total_items": total_items,
+            "page": page,
+            "size": size,
+            "total_pages": total_pages  # Pass total_pages to the template
+        }
+    )
