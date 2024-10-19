@@ -199,3 +199,107 @@ az webapp config container set \
 
 ### Conclusion
 Following these steps will create, deploy, and configure all necessary resources in Azure, ensuring that your FastAPI WebApp is up and running.
+
+
+
+
+## Part 2: Deploy an Azure Function App as a Container
+
+Below, I'll provide step-by-step Azure CLI commands to set up an Azure Function App as a container. The container image will be pulled from Azure Container Registry (ACR). We will assume the container image is named `dfas-ai-funcs`.
+
+**NOTE:**
+
+Function App can be co-hosted on the same App Service Plan as the WebApp, but only if both meet specific compatibility requirements:
+
+- Linux Requirement: Both the WebApp and Function App need to be hosted in a Linux-based App Service Plan. In your case, the App Service Plan (dfas-asp) was created as a Linux plan (--is-linux), which makes it compatible for co-hosting both a WebApp and Function App container.
+
+- Elastic Premium Plan: Azure Function Apps require an Elastic Premium (EP) or App Service Plan when using custom Docker containers. You would need at least a Premium v2 plan (such as P1v2) to support Function Apps as containers. 
+
+**Commands to Co-host the Function App:** If you decide to use the same App Service Plan, the Function App can be created using the existing plan (dfas-asp) with a modified command:
+
+```
+# Create the Function App using the existing App Service Plan
+az functionapp create \
+  --resource-group dfas2 \
+  --plan dfas-asp \  # Use the existing plan
+  --name dfas2-functionapp \
+  --storage-account dfasfuncstorage \
+  --deployment-container-image-name reubenc.azurecr.io/dfas-ai-funcs:v1 \
+  --functions-version 4 \
+  --os-type Linux \
+  --output tsv
+```
+
+
+### Step 1: Create the Azure Function App Plan
+Create a dedicated Function App Plan to host the Azure Function App. This will allow the Function App to use Linux containers:
+
+```bash
+az functionapp plan create \
+  --resource-group dfas2 \
+  --name dfas-func-plan \
+  --location eastus \
+  --number-of-workers 1 \
+  --sku EP1 \
+  --is-linux \
+  --output tsv
+```
+> **Note**: The SKU `EP1` refers to the Elastic Premium tier, which allows the use of custom containers.
+
+
+### Step 2: Create a Storage Account for the Function App
+Azure Function Apps require a storage account to store triggers and other state information:
+
+```bash
+az storage account create \
+  --name dfasfuncstorage \
+  --resource-group dfas2 \
+  --location eastus \
+  --sku Standard_LRS \
+  --output tsv
+```
+
+
+### Step 3: Create the Function App with a Container Deployment
+Create the Function App and configure it to use the container image from ACR:
+
+```bash
+# Create the Function App with a container image
+az functionapp create \
+  --resource-group dfas2 \
+  --plan dfas-func-plan \
+  --name dfas2-functionapp \
+  --storage-account dfasfuncstorage \
+  --deployment-container-image-name reubenc.azurecr.io/dfas-ai-funcs:v1 \
+  --functions-version 4 \
+  --os-type Linux \
+  --output tsv
+```
+> **Note**: Replace `v1` with the appropriate tag for the container image you want to use.
+
+
+### Step 4: Assign AcrPull Role for Function App to ACR
+The Function App's managed identity will need permission to pull the Docker container image from ACR. Assign the `AcrPull` role to the Function App's identity:
+
+```bash
+# Assign AcrPull role for Function App to access ACR
+identity_principal_id=$(az functionapp identity assign --resource-group dfas2 --name dfas2-functionapp --output tsv --query principalId)
+
+# Grant AcrPull permission for the managed identity
+az role assignment create --assignee $identity_principal_id --scope $acr_id --role AcrPull --output tsv
+```
+
+### Step 5: Validate the Deployment
+To ensure everything is working correctly, use the following validation steps:
+
+1. **Verify Function App Status**:
+   ```bash
+   az functionapp show --resource-group dfas2 --name dfas2-functionapp --query "state" --output tsv
+   ```
+   Ensure that the state is `Running`.
+
+2. **Verify Logs**:
+   Use the following command to view live logs and ensure the function is running properly:
+   ```bash
+   az functionapp log tail --name dfas2-functionapp --resource-group dfas2 --output tsv
+   ```
